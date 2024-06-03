@@ -763,6 +763,10 @@ return [
                 'description' => 'Attempt to Geocode Locations',
                 'help' => 'Try to lookup latitude and longitude via geocoding API during polling',
             ],
+            'layer' => [
+                'description' => 'Initial Map Layer',
+                'help' => 'Initial map layer to display when showing various Geo Maps',
+            ],
         ],
         'graphite' => [
             'enable' => [
@@ -1033,6 +1037,10 @@ return [
         ],
         'nfsen_lasts' => [
             'description' => 'Default Last Options',
+        ],
+        'nfsen_base' => [
+            'description' => 'NFSen Base Directory',
+            'help' => 'Used to locate device specific graphs',
         ],
         'nfsen_split_char' => [
             'description' => 'Split Char',
