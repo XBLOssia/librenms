@@ -437,14 +437,18 @@ function add_device(Illuminate\Http\Request $request)
             $device->snmpver = $data['version'];
         }
 
+        $force_add = ! empty($data['force_add']);
+
         if (! empty($data['snmp_disable'])) {
             $device->os = $data['os'] ?? 'ping';
             $device->sysName = $data['sysName'] ?? '';
             $device->hardware = $data['hardware'] ?? '';
             $device->snmp_disable = 1;
+        } elseif ($force_add && ! $device->hasSnmpInfo()) {
+            return api_error(400, 'SNMP information is required when force adding a device');
         }
 
-        (new ValidateDeviceAndCreate($device, ! empty($data['force_add']), ! empty($data['ping_fallback'])))->execute();
+        (new ValidateDeviceAndCreate($device, $force_add, ! empty($data['ping_fallback'])))->execute();
     } catch (Exception $e) {
         return api_error(500, $e->getMessage());
     }
@@ -1123,6 +1127,17 @@ function get_network_ip_addresses(Illuminate\Http\Request $request)
     }
 
     return api_success(array_merge($ipv4, $ipv6), 'addresses');
+}
+
+function get_port_transceiver(Illuminate\Http\Request $request)
+{
+    $port_id = $request->route('portid');
+
+    return check_port_permission($port_id, null, function ($port_id) {
+        $transceivers = Port::find($port_id)->transceivers()->get();
+
+        return api_success($transceivers, 'transceivers');
+    });
 }
 
 function get_port_info(Illuminate\Http\Request $request)
@@ -2704,6 +2719,23 @@ function get_fdb(Illuminate\Http\Request $request)
 
         return api_error(404, 'Device does not exist');
     });
+}
+
+function get_transceivers(Illuminate\Http\Request $request)
+{
+    $hostname = $request->route('hostname');
+
+    if (empty($hostname)) {
+        return api_error(500, 'No hostname has been provided');
+    }
+
+    $device = DeviceCache::get($hostname);
+
+    if (! $device) {
+        return api_error(404, "Device $hostname not found");
+    }
+
+    return api_success($device->transceivers()->hasAccess($request->user())->get(), 'transceivers');
 }
 
 function list_fdb(Illuminate\Http\Request $request)
